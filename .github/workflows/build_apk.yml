@@ -1,0 +1,82 @@
+name: Build APK Otomatis
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+
+      # MEMBUAT SEMUA FILE DAN FOLDER FLUTTER SECARA OTOMATIS
+      - name: Generate Flutter Project Skeleton
+        run: |
+          # 1. Buat pubspec.yaml
+          cat << 'EOF' > pubspec.yaml
+          name: build_apk_rizz
+          description: "Aplikasi ZansPiw"
+          publish_to: 'none'
+          version: 1.0.0+1
+          environment:
+            sdk: '>=3.0.0 <4.0.0'
+          dependencies:
+            flutter:
+              sdk: flutter
+          EOF
+          
+          # 2. Buat file main.dart
+          mkdir -p lib
+          cat << 'EOF' > lib/main.dart
+          import 'package:flutter/material.dart';
+          void main() => runApp(const MyApp());
+          class MyApp extends StatelessWidget {
+            const MyApp({super.key});
+            @override
+            Widget build(BuildContext context) {
+              return MaterialApp(
+                debugShowCheckedModeBanner: false,
+                home: Scaffold(
+                  backgroundColor: const Color(0xFFFAFAFA),
+                  appBar: AppBar(
+                    title: const Text('Build APK Rizz', style: TextStyle(fontWeight: FontWeight.bold)),
+                    backgroundColor: const Color(0xFFFFD700),
+                  ),
+                  body: const Center(
+                    child: Text('Aplikasi Berhasil Dibuat!', style: TextStyle(fontSize: 18)),
+                  ),
+                ),
+              );
+            }
+          }
+          EOF
+
+      # 3. Buat folder Android otomatis
+      - name: Create Android Folder
+        run: flutter create . --platforms=android
+
+      - name: Get Dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZansPiw-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
